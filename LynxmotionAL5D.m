@@ -20,6 +20,38 @@ classdef LynxmotionAL5D
             % forward kinematics
             T = T01 * T12 * T23 * T33p * T3p4;
         end
+
+        function joints = inverse_kinematics(obj, x, y, z, psi, mu)
+            q1 = atan2(y,x);
+            q5 = mu;
+            
+            % compute wrist position
+            % base->wrist is a 3DoF problem
+            vec_z = obj.d4 * sin(psi);
+            D1 = obj.d4 * cos(psi);
+            vec_x = D1 * cos(q1);
+            vec_y = D1 * sin(q1);
+            xw = x - vec_x;
+            yw = y - vec_y;
+            zw = z - vec_z;
+
+            % solve for q2 from wrist
+            r1 = sqrt(xw^2 + yw^2);
+            r2 = zw - obj.d1;
+            r3 = sqrt(r1^2 + r2^2);
+            phi2 = atan2(r2,r1);
+            phi1 = acos((obj.d3^2 - obj.d2^2 - r3^2)/(-2 * obj.d2 * r3));
+            q2 = phi2 - phi1;
+
+            % solve for q3 from wrist
+            phi3 = acos((r3^2 - obj.d2^2 - obj.d3^2)/(-2*obj.d2*obj.d3));
+            q3 = pi - phi3;
+
+            % add pi/2 in psi to obtain rotation in robot frame
+            q4 = (psi + pi/2) - q2 - q3;
+            joints = [q1 q2 q3 q4 q5];
+        end
+
     end
 end
 
