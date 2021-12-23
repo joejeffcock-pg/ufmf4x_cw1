@@ -16,10 +16,14 @@ class LynxmotionGrad(nn.Module):
         self.q2 = nn.Parameter(torch.rand(1) * pi)
         self.q3 = nn.Parameter(torch.rand(1) * pi)
         self.q4 = nn.Parameter(torch.rand(1) * pi)
+        # link lengths (cm)
         self.d1 = 18.5
         self.d2 = 14.5
         self.d3 = 18.75
         self.d4 = 4.3
+        # gripper finger lengths
+        self.f1 = 3.2
+        self.f2 = 4.3
 
     def forward(self, q1, q2, q3, q4):
         pose = torch.zeros(4)
@@ -35,6 +39,7 @@ class LynxmotionGrad(nn.Module):
         q3 = q3.detach().numpy()
         q4 = q4.detach().numpy()
         
+        # transforms of lynxmotion
         T = np.zeros((7,4,4))
         T[0,:,:] = np.eye(4)
         T[1,:,:] = tf_from_distal(0, radians(-90), self.d1, q1)
@@ -44,6 +49,7 @@ class LynxmotionGrad(nn.Module):
         T[5,:,:] = tf_from_distal(0, 0, self.d4, 0)
         T[6,:,:] = tf_from_distal(0, 0, 0, 0)
 
+        # joint positions from FK
         T0eef = np.eye(4)
         points = np.zeros((7,3))
         for i in range(7):
@@ -51,7 +57,18 @@ class LynxmotionGrad(nn.Module):
             points[i,0] = T0eef[0,3]
             points[i,1] = T0eef[1,3]
             points[i,2] = T0eef[2,3]
+
+        # gripper points
+        T0g1f1 = T0eef.dot( tf_from_distal( self.f1, 0, 0      , 0))
+        T0g1f2 = T0g1f1.dot(tf_from_distal( 0      , 0, self.f2, 0))
+        T0g2f1 = T0eef.dot( tf_from_distal(-self.f1, 0, 0      , 0))
+        T0g2f2 = T0g2f1.dot(tf_from_distal( 0      , 0, self.f2, 0))
+        g1 = np.array([T0eef[:3, 3], T0g1f1[:3, 3], T0g1f2[:3, 3]])
+        g2 = np.array([T0eef[:3, 3], T0g2f1[:3, 3], T0g2f2[:3, 3]])
+
         ax.plot3D(points[:,0], points[:,1], points[:,2], colour)
+        ax.plot3D(g1[:,0], g1[:,1], g1[:,2], colour)
+        ax.plot3D(g2[:,0], g2[:,1], g2[:,2], colour)
 
 
 def tf_from_distal(a, alpha, d, theta):
