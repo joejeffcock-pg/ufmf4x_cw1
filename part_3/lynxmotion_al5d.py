@@ -22,11 +22,12 @@ class LynxmotionGrad(nn.Module):
         self.d4 = 4.3
 
     def forward(self, q1, q2, q3, q4):
-        x = torch.cos(q1)*(self.d3*torch.cos(q2 + q3) + self.d2*torch.cos(q2) - self.d4*torch.sin(q2 + q3 + q4))
-        y = torch.sin(q1)*(self.d3*torch.cos(q2 + q3) + self.d2*torch.cos(q2) - self.d4*torch.sin(q2 + q3 + q4))
-        z = self.d1 - self.d3*torch.sin(q2 + q3) - self.d2*torch.sin(q2) - self.d4*torch.cos(q2 + q3 + q4)
-        psi = q2 + q3 + q4 + radians(90)
-        return x,y,z,psi
+        pose = torch.zeros(4)
+        pose[0] = torch.cos(q1)*(self.d3*torch.cos(q2 + q3) + self.d2*torch.cos(q2) - self.d4*torch.sin(q2 + q3 + q4)) # x
+        pose[1] = torch.sin(q1)*(self.d3*torch.cos(q2 + q3) + self.d2*torch.cos(q2) - self.d4*torch.sin(q2 + q3 + q4)) # y
+        pose[2] = self.d1 - self.d3*torch.sin(q2 + q3) - self.d2*torch.sin(q2) - self.d4*torch.cos(q2 + q3 + q4) # z
+        pose[3] = q2 + q3 + q4 + radians(90) # psi
+        return pose
 
     def draw(self, q1, q2, q3, q4, ax, colour='gray'):
         q1 = q1.detach().numpy()
@@ -61,9 +62,7 @@ def tf_from_distal(a, alpha, d, theta):
 
 def loss_function(current_pose, target_pose):
     # sum contribution of each dim to loss
-    loss = torch.Tensor([0])
-    for i in range(len(current_pose)):
-        loss += torch.pow(target_pose[i] - current_pose[i], 2)
+    loss = torch.sum(torch.pow(target_pose - current_pose, 2))
     return loss
 
 def draw():
