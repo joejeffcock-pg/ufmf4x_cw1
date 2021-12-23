@@ -81,8 +81,15 @@ def tf_from_distal(a, alpha, d, theta):
                      [0            ,  0                          ,  0                          , 1              ]])
 
 def loss_function(current_pose, target_pose):
-    # sum contribution of each dim to loss
-    loss = torch.sum(torch.pow(target_pose - current_pose, 2))
+    error = torch.zeros(5)
+
+    # positional error
+    error[:3] = target_pose[:3] - current_pose[:3]
+
+    # rotational error (degrees)
+    error[3:] = (target_pose[3:] - current_pose[3:]) * (180.0/pi)
+
+    loss = torch.sum(torch.pow(error, 2))
     return loss
 
 def draw():
@@ -97,7 +104,7 @@ def draw():
 
 if __name__ == "__main__":
     robot = LynxmotionGrad()
-    optimiser = optim.SGD(robot.parameters(), lr=1e-3, momentum=0.9)
+    optimiser = optim.SGD(robot.parameters(), lr=1e-4, momentum=0.9)
 
     q1 = torch.rand(1) * pi
     q2 = torch.rand(1) * pi
