@@ -1,13 +1,13 @@
 classdef LynxmotionAL5D
     properties (Constant)
-        % link lengths
-        d1 = 5
-        d2 = 10
-        d3 = 10
-        d4 = 5
+        % link lengths (cm)
+        d1 = 18.5
+        d2 = 14.5
+        d3 = 18.75
+        d4 = 4.3
         % gripper finger lengths
-        f1 = 2
-        f2 = 2
+        f1 = 3.2
+        f2 = 4.3
     end
     properties
         eef_pose
@@ -46,11 +46,11 @@ classdef LynxmotionAL5D
             r3 = sqrt(r1^2 + r2^2);
             phi2 = atan2(r2,r1);
             phi1 = acos((obj.d3^2 - obj.d2^2 - r3^2)/(-2 * obj.d2 * r3));
-            q2 = phi2 - phi1;
+            q2 = phi2 + phi1;
 
             % solve for q3 from wrist
             phi3 = acos((r3^2 - obj.d2^2 - obj.d3^2)/(-2*obj.d2*obj.d3));
-            q3 = pi - phi3;
+            q3 = -(pi - phi3);
 
             % add pi/2 in psi to obtain rotation in robot frame
             q4 = (psi + pi/2) - q2 - q3;
@@ -59,7 +59,7 @@ classdef LynxmotionAL5D
 
         function draw(obj, q1, q2, q3, q4, q5)
             % transforms of lynxmotion
-            T = zeros(6,4,4);
+            T = zeros(7,4,4);
             T(1,:,:) = eye(4);
             T(2,:,:) = [tf_from_distal(0, deg2rad(90), obj.d1, q1)];
             T(3,:,:) = [tf_from_distal(obj.d2, 0, 0, q2)];
@@ -90,8 +90,8 @@ classdef LynxmotionAL5D
             plot3(points(:,1), points(:,2), points(:,3), 'ko-', 'Linewidth', 2);
             hold on
             plot3(g1(1,:), g1(2,:), g1(3,:), 'k-', 'Linewidth', 2);
-            hold on
             plot3(g2(1,:), g2(2,:), g2(3,:), 'k-', 'Linewidth', 2);
+            hold off
         end
     end
 end
