@@ -25,7 +25,8 @@ class LynxmotionGrad(nn.Module):
         x = torch.cos(q1)*(self.d3*torch.cos(q2 + q3) + self.d2*torch.cos(q2) - self.d4*torch.sin(q2 + q3 + q4))
         y = torch.sin(q1)*(self.d3*torch.cos(q2 + q3) + self.d2*torch.cos(q2) - self.d4*torch.sin(q2 + q3 + q4))
         z = self.d1 - self.d3*torch.sin(q2 + q3) - self.d2*torch.sin(q2) - self.d4*torch.cos(q2 + q3 + q4)
-        return x,y,z
+        psi = q2 + q3 + q4 + radians(90)
+        return x,y,z,psi
 
     def draw(self, q1, q2, q3, q4, ax, colour='gray'):
         q1 = q1.detach().numpy()
@@ -58,6 +59,13 @@ def tf_from_distal(a, alpha, d, theta):
                      [0            ,  sin(alpha)              ,  cos(alpha)              , d              ],
                      [0            ,  0                          ,  0                          , 1              ]])
 
+def loss_function(current_pose, target_pose):
+    # sum contribution of each dim to loss
+    loss = torch.Tensor([0])
+    for i in range(len(current_pose)):
+        loss += torch.pow(target_pose[i] - current_pose[i], 2)
+    return loss
+
 def draw():
     plt.clf()
     ax = plt.axes(projection='3d')
@@ -70,7 +78,7 @@ def draw():
 
 if __name__ == "__main__":
     robot = LynxmotionGrad()
-    optimiser = optim.SGD(robot.parameters(), lr=1e-4, momentum=0.9)
+    optimiser = optim.SGD(robot.parameters(), lr=1e-3, momentum=0.9)
 
     q1 = torch.rand(1) * pi
     q2 = torch.rand(1) * pi
@@ -82,23 +90,23 @@ if __name__ == "__main__":
     plt.show()
     
     plt.ion()
-    for i in range(100):
+    for i in range(200):
         optimiser.zero_grad()
-        x,y,z = robot.forward(robot.q1, robot.q2, robot.q3, robot.q4)
-        loss = torch.pow(target_pose[0] - x, 2) + torch.pow(target_pose[1] - y, 2) + torch.pow(target_pose[2] - z, 2)
+        current_pose = robot.forward(robot.q1, robot.q2, robot.q3, robot.q4)
+        loss = loss_function(current_pose, target_pose)
         loss.backward()
         optimiser.step()
 
         print(loss)
-
         draw()
         plt.show()
         plt.pause(0.03)
     plt.ioff()
 
-    print (target_pose)
-    print (robot.forward(robot.q1, robot.q2, robot.q3, robot.q4))
-    print (q1, q2, q3, q4)
-    print (robot.q1, robot.q2, robot.q3, robot.q4)
+    with torch.no_grad():
+        print (target_pose)
+        print (robot.forward(robot.q1, robot.q2, robot.q3, robot.q4))
+        print (q1, q2, q3, q4)
+        print (robot.q1, robot.q2, robot.q3, robot.q4)
     draw()
     plt.show()
