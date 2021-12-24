@@ -136,41 +136,48 @@ def draw():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--display', action='store_true', dest='display', help='show animated plot of IK optimisation')
+    parser.add_argument('--display', action='store_true', dest='display', help='show strat/end plots of IK optimisation')
+    parser.add_argument('--animate', action='store_true', dest='animate', help='show animated plot of IK optimisation')
+    parser.add_argument('--verbose', action='store_true', dest='verbose', help='verbose output during IK optimisation')
     args = parser.parse_args()
 
     robot = LynxmotionGrad()
     optimiser = optim.SGD(robot.parameters(), lr=1e-4, momentum=0.9)
 
+    # random target
     target = LynxmotionGrad()
     with torch.no_grad():
         target_pose = target.forward_kinematics()
 
-    draw()
-    plt.show()
+    if args.display:
+        draw()
+        plt.show()
     
-    max_iters = 1000
     tolerances = np.array([0.5, 0.0175, 0.0175]) # 0.5cm xyz; 1deg psi,mu
-    iteration = 0
     loss, errors = robot.inverse_kinematics_step(optimiser, target_pose)
 
-    if args.display:
+    if args.animate:
         plt.ion()
-
+    iteration = 0
     time_start = time.time()
-    while (errors > tolerances).any() and iteration < max_iters:
-        loss, errors = robot.inverse_kinematics_step(optimiser, target_pose)
 
-        if args.display:
-            print(errors)
+    # optimise until within tolerance
+    while (errors > tolerances).any():
+        loss, errors = robot.inverse_kinematics_step(optimiser, target_pose)
+        iteration += 1
+
+        if args.animate:
             draw()
             plt.show()
             plt.pause(0.03)
-    time_elapsed = time.time() - time_start
+        if args.verbose:
+            print('{} loss: {:.3f} error: {}'.format(iteration, loss, errors))
 
-    if args.display:
+    time_elapsed = time.time() - time_start
+    if args.animate:
         plt.ioff()
 
     print('time taken: {:.2f} seconds'.format(time_elapsed))
-    draw()
-    plt.show()
+    if args.display:
+        draw()
+        plt.show()
