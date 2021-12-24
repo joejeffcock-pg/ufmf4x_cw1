@@ -29,8 +29,15 @@ class LynxmotionGrad(nn.Module):
         self.f1 = 3.2
         self.f2 = 4.3
 
-    def forward(self, q1, q2, q3, q4, q5):
+
+    def forward_kinematics(self):
         pose = torch.zeros(5)
+        q1 = self.q1
+        q2 = self.q2
+        q3 = self.q3
+        q4 = self.q4
+        q5 = self.q5
+
         pose[0] = torch.cos(q1)*(self.d3*torch.cos(q2 + q3) + self.d2*torch.cos(q2) - self.d4*torch.sin(q2 + q3 + q4)) # x
         pose[1] = torch.sin(q1)*(self.d3*torch.cos(q2 + q3) + self.d2*torch.cos(q2) - self.d4*torch.sin(q2 + q3 + q4)) # y
         pose[2] = self.d1 - self.d3*torch.sin(q2 + q3) - self.d2*torch.sin(q2) - self.d4*torch.cos(q2 + q3 + q4) # z
@@ -38,12 +45,44 @@ class LynxmotionGrad(nn.Module):
         pose[4] = q5 # mu
         return pose
 
-    def draw(self, q1, q2, q3, q4, q5, ax, colour='gray'):
-        q1 = q1.detach().numpy()
-        q2 = q2.detach().numpy()
-        q3 = q3.detach().numpy()
-        q4 = q4.detach().numpy()
-        q5 = q5.detach().numpy()
+    def loss_function(self, target_pose):
+        current_pose = self.forward_kinematics()
+        error = torch.zeros(5)
+
+        # positional error
+        error[:3] = target_pose[:3] - current_pose[:3]
+
+        # rotational error (degrees)
+        error[3:] = (target_pose[3:] - current_pose[3:]) * (180.0/pi)
+
+        loss = torch.sum(torch.pow(error, 2))
+        return loss
+
+    def l2_norm(self, target_pose):
+        target_pose_np = target_pose.detach().numpy()
+        current_pose_np = self.forward_kinematics().detach().numpy()
+
+        pos_dist = np.linalg.norm(target_pose_np[:3] - current_pose_np[:3])
+        psi_dist = np.linalg.norm(target_pose_np[3] - current_pose_np[3])
+        mu_dist = np.linalg.norm(target_pose_np[4] - current_pose_np[4])
+
+        return np.array([pos_dist, psi_dist, mu_dist])
+
+    def inverse_kinematics_step(self, optimiser, target_pose):
+        optimiser.zero_grad()
+        loss = self.loss_function(target_pose)
+        loss.backward()
+        optimiser.step()
+
+        errors = self.l2_norm(target_pose)
+        return loss, errors
+
+    def draw(self, ax, colour='gray'):
+        q1 = self.q1.detach().numpy()
+        q2 = self.q2.detach().numpy()
+        q3 = self.q3.detach().numpy()
+        q4 = self.q4.detach().numpy()
+        q5 = self.q5.detach().numpy()
         
         # transforms of lynxmotion
         T = np.zeros((7,4,4))
@@ -83,27 +122,7 @@ def tf_from_distal(a, alpha, d, theta):
                      [0            ,  sin(alpha)              ,  cos(alpha)              , d              ],
                      [0            ,  0                          ,  0                          , 1              ]])
 
-def loss_function(current_pose, target_pose):
-    error = torch.zeros(5)
 
-    # positional error
-    error[:3] = target_pose[:3] - current_pose[:3]
-
-    # rotational error (degrees)
-    error[3:] = (target_pose[3:] - current_pose[3:]) * (180.0/pi)
-
-    loss = torch.sum(torch.pow(error, 2))
-    return loss
-
-def l2_norm(current_pose, target_pose):
-    target_pose_np = target_pose.detach().numpy()
-    current_pose_np = current_pose.detach().numpy()
-
-    pos_dist = np.linalg.norm(target_pose_np[:3] - current_pose_np[:3])
-    psi_dist = np.linalg.norm(target_pose_np[3] - current_pose_np[3])
-    mu_dist = np.linalg.norm(target_pose_np[4] - current_pose_np[4])
-
-    return np.array([pos_dist, psi_dist, mu_dist])
 
 def draw():
     plt.clf()
@@ -111,8 +130,8 @@ def draw():
     ax.set_xlim(-50,50)
     ax.set_ylim(-50,50)
     ax.set_zlim(-30,70)
-    robot.draw(q1, q2, q3, q4, q5, ax, 'gray')
-    robot.draw(robot.q1, robot.q2, robot.q3, robot.q4, robot.q5, ax, 'blue')
+    target.draw(ax, 'gray')
+    robot.draw(ax, 'blue')
 
 
 if __name__ == "__main__":
@@ -123,45 +142,35 @@ if __name__ == "__main__":
     robot = LynxmotionGrad()
     optimiser = optim.SGD(robot.parameters(), lr=1e-4, momentum=0.9)
 
-    q1 = torch.rand(1) * pi
-    q2 = torch.rand(1) * pi
-    q3 = torch.rand(1) * pi
-    q4 = torch.rand(1) * pi
-    q5 = torch.rand(1) * pi
-    target_pose = robot.forward(q1, q2, q3, q4, q5)
+    target = LynxmotionGrad()
+    with torch.no_grad():
+        target_pose = target.forward_kinematics()
 
     draw()
     plt.show()
     
-
     max_iters = 1000
-    tolerances = np.array([1.0, 0.0175, 0.0175]) # 1cm xyz; 1deg psi,mu
+    tolerances = np.array([0.5, 0.0175, 0.0175]) # 0.5cm xyz; 1deg psi,mu
     iteration = 0
-    errors = np.ones(3) * float('inf')
+    loss, errors = robot.inverse_kinematics_step(optimiser, target_pose)
 
-    plt.ion()
+    if args.display:
+        plt.ion()
+
     time_start = time.time()
     while (errors > tolerances).any() and iteration < max_iters:
-        optimiser.zero_grad()
-        current_pose = robot.forward(robot.q1, robot.q2, robot.q3, robot.q4, robot.q5)
-        loss = loss_function(current_pose, target_pose)
-        loss.backward()
-        optimiser.step()
+        loss, errors = robot.inverse_kinematics_step(optimiser, target_pose)
 
-        errors = l2_norm(current_pose, target_pose)
         if args.display:
-            print(loss, errors)
+            print(errors)
             draw()
-        plt.show()
-        plt.pause(0.03)
-    plt.ioff()
-
+            plt.show()
+            plt.pause(0.03)
     time_elapsed = time.time() - time_start
+
+    if args.display:
+        plt.ioff()
+
     print('time taken: {:.2f} seconds'.format(time_elapsed))
-    # with torch.no_grad():
-        # print (target_pose)
-        # print (robot.forward(robot.q1, robot.q2, robot.q3, robot.q4, robot.q5))
-        # print (q1, q2, q3, q4, q5)
-        # print (robot.q1, robot.q2, robot.q3, robot.q4, robot.q5)
     draw()
     plt.show()
