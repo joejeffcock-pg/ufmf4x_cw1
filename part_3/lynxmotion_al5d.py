@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from math import sin, cos, radians, pi
 
+import time
+import argparse
+
 class LynxmotionGrad(nn.Module):
     def __init__(self):
         super(LynxmotionGrad, self).__init__()
@@ -92,6 +95,16 @@ def loss_function(current_pose, target_pose):
     loss = torch.sum(torch.pow(error, 2))
     return loss
 
+def l2_norm(current_pose, target_pose):
+    target_pose_np = target_pose.detach().numpy()
+    current_pose_np = current_pose.detach().numpy()
+
+    pos_dist = np.linalg.norm(target_pose_np[:3] - current_pose_np[:3])
+    psi_dist = np.linalg.norm(target_pose_np[3] - current_pose_np[3])
+    mu_dist = np.linalg.norm(target_pose_np[4] - current_pose_np[4])
+
+    return np.array([pos_dist, psi_dist, mu_dist])
+
 def draw():
     plt.clf()
     ax = plt.axes(projection='3d')
@@ -103,6 +116,10 @@ def draw():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--display', action='store_true', dest='display', help='show animated plot of IK optimisation')
+    args = parser.parse_args()
+
     robot = LynxmotionGrad()
     optimiser = optim.SGD(robot.parameters(), lr=1e-4, momentum=0.9)
 
@@ -116,24 +133,35 @@ if __name__ == "__main__":
     draw()
     plt.show()
     
+
+    max_iters = 1000
+    tolerances = np.array([1.0, 0.0175, 0.0175]) # 1cm xyz; 1deg psi,mu
+    iteration = 0
+    errors = np.ones(3) * float('inf')
+
     plt.ion()
-    for i in range(200):
+    time_start = time.time()
+    while (errors > tolerances).any() and iteration < max_iters:
         optimiser.zero_grad()
         current_pose = robot.forward(robot.q1, robot.q2, robot.q3, robot.q4, robot.q5)
         loss = loss_function(current_pose, target_pose)
         loss.backward()
         optimiser.step()
 
-        print(loss)
-        draw()
+        errors = l2_norm(current_pose, target_pose)
+        if args.display:
+            print(loss, errors)
+            draw()
         plt.show()
         plt.pause(0.03)
     plt.ioff()
 
-    with torch.no_grad():
-        print (target_pose)
-        print (robot.forward(robot.q1, robot.q2, robot.q3, robot.q4, robot.q5))
-        print (q1, q2, q3, q4, q5)
-        print (robot.q1, robot.q2, robot.q3, robot.q4, robot.q5)
+    time_elapsed = time.time() - time_start
+    print('time taken: {:.2f} seconds'.format(time_elapsed))
+    # with torch.no_grad():
+        # print (target_pose)
+        # print (robot.forward(robot.q1, robot.q2, robot.q3, robot.q4, robot.q5))
+        # print (q1, q2, q3, q4, q5)
+        # print (robot.q1, robot.q2, robot.q3, robot.q4, robot.q5)
     draw()
     plt.show()
