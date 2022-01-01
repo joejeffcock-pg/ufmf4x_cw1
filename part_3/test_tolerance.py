@@ -8,8 +8,8 @@ pos_tols = np.logspace(1,-3,5,base=2)
 ori_tols = np.logspace(1,-3,5,base=2) * np.pi/180
 results = {}
 no_tests = 1000
-no_iterations = 100
-lr = 7.74e-05
+no_iterations = 150 # approx 5Hz
+lr = 1.29e-04
 
 for i in range(pos_tols.size):
     pos_tol = pos_tols[i]

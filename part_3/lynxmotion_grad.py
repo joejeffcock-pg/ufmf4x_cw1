@@ -15,11 +15,11 @@ import argparse
 class LynxmotionGrad(nn.Module):
     def __init__(self):
         super(LynxmotionGrad, self).__init__()
-        self.q1 = nn.Parameter(torch.rand(1) * pi)
-        self.q2 = nn.Parameter(torch.rand(1) * pi)
-        self.q3 = nn.Parameter(torch.rand(1) * pi)
-        self.q4 = nn.Parameter(torch.rand(1) * pi)
-        self.q5 = nn.Parameter(torch.rand(1) * pi)
+        self.q1 = nn.Parameter(torch.rand(1) * 2 * pi - pi)
+        self.q2 = nn.Parameter(torch.rand(1) * 2 * pi - pi)
+        self.q3 = nn.Parameter(torch.rand(1) * 2 * pi - pi)
+        self.q4 = nn.Parameter(torch.rand(1) * 2 * pi - pi)
+        self.q5 = nn.Parameter(torch.rand(1) * 2 * pi - pi)
         # link lengths (cm)
         self.d1 = 18.5
         self.d2 = 14.5
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     robot = LynxmotionGrad()
-    optimiser = optim.SGD(robot.parameters(), lr=1e-4, momentum=0.9)
+    optimiser = optim.SGD(robot.parameters(), lr=1.29e-04, momentum=0.9)
 
     # random target
     target = LynxmotionGrad()
