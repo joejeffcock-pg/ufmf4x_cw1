@@ -132,6 +132,7 @@ def draw():
     ax.set_zlim(-30,70)
     target.draw(ax, 'gray')
     robot.draw(ax, 'blue')
+    plt.legend(["Target pose", "Optimised pose"])
 
 
 if __name__ == "__main__":
