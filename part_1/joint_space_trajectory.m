@@ -17,6 +17,7 @@ t_i = 0; % time at pose i
 t_f = 2; % time at pose f = i + 1
 samples = 50; % samples between each pose
 points = zeros(size(poses,1) * samples, 3); % store points to plot trajectory
+az = -37.5; % initial azimuth angle for view
 
 for i = 1:size(poses,1)-1
     p1 = poses(i,:);
@@ -46,7 +47,9 @@ for i = 1:size(poses,1)-1
         hold on;
         plot3(points(1:i*samples+j,1),points(1:i*samples+j,2),points(1:i*samples+j,3),'-','Linewidth',2,'Color',[0 0 1 0.5]);
 
-        axis([-50 50 -50 50 -30 70])
+        axis([-50 50 -50 50 -30 70]);
+        view([az, 30]);
+        az = az - 0.2;
         grid on;
         pause(0.01);
         hold off;
