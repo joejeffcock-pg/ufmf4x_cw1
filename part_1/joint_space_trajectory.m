@@ -19,9 +19,9 @@ samples = 50; % samples between each pose
 points = zeros(size(poses,1) * samples, 3); % store points to plot trajectory
 az = -37.5; % initial azimuth angle for view
 
-for i = 1:size(poses,1)-1
-    p1 = poses(i,:);
-    p2 = poses(i+1,:);
+for i = 0:size(poses,1)-2
+    p1 = poses(i+1,:);
+    p2 = poses(i+2,:);
     
     % compute IK for pose i and i + 1
     j1 = arm.inverse_kinematics(p1(1), p1(2), p1(3), p1(4), p1(5));
@@ -77,13 +77,11 @@ function trajectory = joint_trajectory(theta_i, theta_f, velocity_i, velocity_f,
     eq4 = velocity_f == a1 + 2*a2*t_f + 3*a3*t_f^2;
 
     % compute polynomial solution (degree 3)
-    [a0, a1, a2, a3] = vpasolve(eq1,eq2,eq3,eq4,a0,a1,a2,a3) ;
+    [a0, a1, a2, a3] = vpasolve(eq1,eq2,eq3,eq4,a0,a1,a2,a3);
+    p = cast([a3 a2 a1 a0], "double");
 
     % sample points along trajectory
     time_step = linspace(t_i,t_f,samples);
-    angle_array = a0 + a1*time_step + a2*(time_step.^2) + a3*(time_step.^3);
+    trajectory = polyval(p,time_step,3);
 
-    % copy to output matrix
-    trajectory = zeros(1,samples);
-    trajectory(:) = angle_array(:);
 end
