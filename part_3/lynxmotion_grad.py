@@ -5,6 +5,7 @@ from torch import optim
 
 from mpl_toolkits import mplot3d
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
 import numpy as np
 from math import sin, cos, radians, pi
@@ -130,9 +131,11 @@ def draw():
     ax.set_xlim(-50,50)
     ax.set_ylim(-50,50)
     ax.set_zlim(-30,70)
-    target.draw(ax, 'gray')
+    target.draw(ax, 'orange')
     robot.draw(ax, 'blue')
-    plt.legend(["Target pose", "Optimised pose"])
+    t_patch = mpatches.Patch(color="orange", label="Target pose")
+    o_patch = mpatches.Patch(color="blue", label="Optimised pose")
+    plt.legend(handles=[t_patch, o_patch])
 
 
 if __name__ == "__main__":
@@ -170,7 +173,7 @@ if __name__ == "__main__":
         if args.animate:
             draw()
             plt.show()
-            plt.pause(0.03)
+            plt.pause(1e-10)
         if args.verbose:
             print('{} loss: {:.3f} error: {}'.format(iteration, loss, errors))
 
