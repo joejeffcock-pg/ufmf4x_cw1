@@ -10,22 +10,31 @@ px = 0;
 py = 0;
 phi_1 = pi/6+0;
 
-% call function to solve IK
-ik_angle = robot.IK(px, py, phi_1);
-theta_1 = ik_angle(1,1);
-theta_2 = ik_angle(2,1);
-theta_3 = ik_angle(3,1);
-
-% displace angles
-disp(theta_1*180/pi)
-disp(theta_2*180/pi)
-disp(theta_3*180/pi)
-
 % draw robot
-robot.draw(px, py, phi_1, theta_1, theta_2, theta_3);
+draw_ik(robot, px, py, phi_1)
 
 % draw work space of the robot
 draw_ws(robot);
+
+function draw_ik(robot, px, py, phi_1)
+    %% This function takes in the position of ee and angle alpha repected to the first origin    
+    %% output is the plot of the robot
+
+    ik_angle = robot.IK(px, py, phi_1);
+    theta_1 = ik_angle(1,1);
+    theta_2 = ik_angle(2,1);
+    theta_3 = ik_angle(3,1);
+
+    % displace angles
+    disp(theta_1*180/pi)
+    disp(theta_2*180/pi)
+    disp(theta_3*180/pi)
+
+    % draw robot
+    figure(1)
+    robot.draw(px, py, phi_1, theta_1, theta_2, theta_3);
+
+end
 
 function draw_ws(robot)
     %% This function will sample the ee position and orientation
@@ -73,8 +82,7 @@ function draw_ws(robot)
             end
         end
     end
-    
-
+  
     % plotting work space
     figure(2)
     scatter(x_result,y_result,'rx')
