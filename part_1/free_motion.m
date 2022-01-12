@@ -76,11 +76,11 @@ plot(time_steps,q2_spj*180/pi)
 plot(time_steps,q3_spj*180/pi)
 plot(time_steps,q4_spj*180/pi)
 plot(time_steps,q5_spj*180/pi)
-legend('theta_1','theta_2','theta_3','theta_4','theta_5')
+legend('\theta_1','\theta_2','\theta_3','\theta_4','\theta_5')
 xlabel('time(s)')
 ylabel('degree(°)')
 xlim([0,2])
 ylim([-360,360])
 yticks(-360:60:360);
 grid on
-title('Joint space')
+title('Joint Angles over Time (Joint Space Motion)')
