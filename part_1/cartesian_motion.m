@@ -1,3 +1,7 @@
+clc
+clear all
+close all
+
 arm = LynxmotionAL5D();
 
 poses = [
@@ -21,6 +25,12 @@ poly = 10;
 points = zeros(size(poses,1) * c_samples, 3); % store points to plot trajectory
 az = -37.5; % initial azimuth angle for view
 
+q1_array = zeros(1,c_samples);
+q2_array = zeros(1,c_samples);
+q3_array = zeros(1,c_samples);
+q4_array = zeros(1,c_samples);
+q5_array = zeros(1,c_samples);
+
 for i = 0:size(poses,1)-2
     p1 = poses(i+1,:);
     p2 = poses(i+2,:);
@@ -36,13 +46,13 @@ for i = 0:size(poses,1)-2
         points(i*c_samples+j,1) = eef(1,4);
         points(i*c_samples+j,2) = eef(2,4);
         points(i*c_samples+j,3) = eef(3,4);
-
+        
         % animated joint trajectory
         figure(1);
         arm.draw(j1(1),j1(2),j1(3),j1(4),j1(5));
         hold on;
         plot3(points(1:i*c_samples+j,1),points(1:i*c_samples+j,2),points(1:i*c_samples+j,3),'-','Linewidth',2,'Color',[0 0 1 0.5]);
-
+        
         axis([-50 50 -50 50 -30 70]);
         view([az, 30]);
         az = az - 0.2;
@@ -52,6 +62,12 @@ for i = 0:size(poses,1)-2
         grid on;
         pause(0.01);
         hold off;
+
+        q1_array(1,j) = j1(1);
+        q2_array(1,j) = j1(2);
+        q3_array(1,j) = j1(3);
+        q4_array(1,j) = j1(4);
+        q5_array(1,j) = j1(5);
     end
 
     % advance time
@@ -85,3 +101,23 @@ ylabel('y (cm)');
 zlabel('z (cm)');
 grid on;
 view([-37.5 - 90, 30]);
+
+% plot last motion angle vs time
+time_steps = linspace(0,2,c_samples);
+
+figure(5);
+
+plot(time_steps,q1_array*180/pi)
+hold on
+plot(time_steps,q2_array*180/pi)
+plot(time_steps,q3_array*180/pi)
+plot(time_steps,q4_array*180/pi)
+plot(time_steps,q5_array*180/pi)
+legend('theta_1','theta_2','theta_3','theta_4','theta_5')
+xlabel('time(s)')
+ylabel('degree(°)')
+xlim([0,2])
+ylim([-360,360])
+yticks(-360:60:360);
+grid on
+title('Cartesian space')

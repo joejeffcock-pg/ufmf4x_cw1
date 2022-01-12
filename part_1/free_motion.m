@@ -50,9 +50,6 @@ for i = 0:size(poses,1)-2
         axis([-50 50 -50 50 -30 70]);
         view([az, 30]);
         az = az - 0.2;
-        xlabel('x (cm)');
-        ylabel('y (cm)');
-        zlabel('z (cm)');
         grid on;
         pause(0.01);
         hold off;
@@ -67,25 +64,23 @@ end
 figure(2);
 plot3(points(:,1),points(:,2),points(:,3),'b-','Linewidth',2);
 axis([-50 50 -50 50 -30 70])
-xlabel('x (cm)');
-ylabel('y (cm)');
-zlabel('z (cm)');
 grid on;
+
+% plot last motion angle vs time
+time_steps = linspace(0,2,samples);
 
 figure(3);
-plot3(points(:,1),points(:,2),points(:,3),'b-','Linewidth',2);
-axis([-50 50 -50 50 -30 70])
-xlabel('x (cm)');
-ylabel('y (cm)');
-zlabel('z (cm)');
-grid on;
-view([-37.5 - 45, 30]);
-
-figure(4);
-plot3(points(:,1),points(:,2),points(:,3),'b-','Linewidth',2);
-axis([-50 50 -50 50 -30 70])
-xlabel('x (cm)');
-ylabel('y (cm)');
-zlabel('z (cm)');
-grid on;
-view([-37.5 - 90, 30]);
+plot(time_steps,q1_spj*180/pi)
+hold on
+plot(time_steps,q2_spj*180/pi)
+plot(time_steps,q3_spj*180/pi)
+plot(time_steps,q4_spj*180/pi)
+plot(time_steps,q5_spj*180/pi)
+legend('theta_1','theta_2','theta_3','theta_4','theta_5')
+xlabel('time(s)')
+ylabel('degree(°)')
+xlim([0,2])
+ylim([-360,360])
+yticks(-360:60:360);
+grid on
+title('Joint space')
