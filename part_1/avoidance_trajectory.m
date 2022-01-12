@@ -37,7 +37,6 @@ for i = 0:size(poses,1)-2
             % store points to plot trajectory
             eef = arm.forward_kinematics(j1(1),j1(2),j1(3),j1(4),j1(5));
             points = [points;[eef(1,4) eef(2,4) eef(3,4)]];
-            size(points)
     
             % animated joint trajectory
             figure(1);
@@ -49,6 +48,9 @@ for i = 0:size(poses,1)-2
             axis([-50 50 -50 50 -30 70]);
             view([az, 30]);
             az = az - 0.2;
+            xlabel('x (cm)');
+            ylabel('y (cm)');
+            zlabel('z (cm)');
             grid on;
             pause(0.01);
             hold off;
@@ -63,10 +65,46 @@ hold on
 plot3(points(:,1),points(:,2),points(:,3),'b-','Linewidth',2);
 hold off
 axis([-50 50 -50 50 -30 70])
+xlabel('x (cm)');
+ylabel('y (cm)');
+zlabel('z (cm)');
 grid on;
 
+figure(3);
+obstacle.draw()
+hold on
+plot3(points(:,1),points(:,2),points(:,3),'b-','Linewidth',2);
+hold off
+axis([-50 50 -50 50 -30 70])
+xlabel('x (cm)');
+ylabel('y (cm)');
+zlabel('z (cm)');
+grid on;
+view([-37.5 + 45, 30]);
 
+figure(4);
+obstacle.draw()
+hold on
+plot3(points(:,1),points(:,2),points(:,3),'b-','Linewidth',2);
+hold off
+axis([-50 50 -50 50 -30 70])
+xlabel('x (cm)');
+ylabel('y (cm)');
+zlabel('z (cm)');
+grid on;
+view([-37.5 + 90, 30]);
 
+figure(5);
+obstacle.draw()
+hold on
+plot3(points(:,1),points(:,2),points(:,3),'b-','Linewidth',2);
+hold off
+axis([-50 50 -50 50 -30 70])
+xlabel('x (cm)');
+ylabel('y (cm)');
+zlabel('z (cm)');
+grid on;
+view([0, 0]);
 
 
 

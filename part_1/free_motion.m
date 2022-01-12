@@ -50,6 +50,9 @@ for i = 0:size(poses,1)-2
         axis([-50 50 -50 50 -30 70]);
         view([az, 30]);
         az = az - 0.2;
+        xlabel('x (cm)');
+        ylabel('y (cm)');
+        zlabel('z (cm)');
         grid on;
         pause(0.01);
         hold off;
@@ -64,4 +67,25 @@ end
 figure(2);
 plot3(points(:,1),points(:,2),points(:,3),'b-','Linewidth',2);
 axis([-50 50 -50 50 -30 70])
+xlabel('x (cm)');
+ylabel('y (cm)');
+zlabel('z (cm)');
 grid on;
+
+figure(3);
+plot3(points(:,1),points(:,2),points(:,3),'b-','Linewidth',2);
+axis([-50 50 -50 50 -30 70])
+xlabel('x (cm)');
+ylabel('y (cm)');
+zlabel('z (cm)');
+grid on;
+view([-37.5 - 45, 30]);
+
+figure(4);
+plot3(points(:,1),points(:,2),points(:,3),'b-','Linewidth',2);
+axis([-50 50 -50 50 -30 70])
+xlabel('x (cm)');
+ylabel('y (cm)');
+zlabel('z (cm)');
+grid on;
+view([-37.5 - 90, 30]);
